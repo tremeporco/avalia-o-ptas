@@ -1,21 +1,23 @@
-src/services/auth.service.js (esboço para o futuro)
-import { usersModel } from '../models/users.model.js'
+function logger(req, res, next) {
+  const inicio = Date.now()
 
+  // 'finish' dispara quando a resposta já foi enviada ao cliente
+  res.on('finish', () => {
+    const ms = Date.now() - inicio
+    console.log(`${req.method} ${req.url} — ${ms}ms`)
+  })
 
-
-//O auth usa o usersModel para buscar os users
-//  e verifica o e-mail e a senha dados.
-export async function autenticar(email, senha) {
-  const user = (await usersModel.findAll()).find(u => u.email === email)
-  if (!user || user.senha !== senha) {
-    const erro = new Error('credenciais inválidas')
-    erro.status = 401
-    throw erro
-  }
-  return user
+  next() // o fluxo segue IMEDIATAMENTE, sem esperar o log
 }
 
-//Quando trocarmos o JSON por MongoDB, 
-// ele vai usar model ainda então fica quase igual
+export { logger }
 
-//A diferença é que o model vai buscar mongo ao invés do json
+// deve ser o ÚLTIMO app.use do arquivo
+function errorHandler(err, req, res, next) {
+  console.error(err.stack) // o rastro completo vai para o terminal (log do dev)
+
+  const status = err.status || 500
+  res.status(status).json({ erro: err.message || 'Erro interno' })
+}
+
+export { errorHandler }
